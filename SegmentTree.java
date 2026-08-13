@@ -1,50 +1,64 @@
-class SegmentTree {
-    int[] tree, arr;
-    int n;
+class Node{
+    int maxlen, prefix, suffix;
+    char leftchar, rightchar;
+}
 
-    public SegmentTree(int[] nums) {
-        n = nums.length;
-        arr = nums;
-        tree = new int[4 * n]; // Allocating 4*N space
-        build(0, 0, n - 1);
+public class SegmentTree {
+
+    Node[] segtree;
+    public void buildsegtree(int i, int l, int r, String s){
+        int mid = (l + r)/2;
+        buildsegtree(2*i + 1, l, mid, s);;
+        buildsegtree(2*i + 2, mid + 1, r, s);
+        segtree[i] = merge(segtree[2*i + 1], segtree[2*i + 2], mid - l + 1, r - mid);
     }
 
-    private void build(int node, int start, int end) {
-        if (start == end) {
-            tree[node] = arr[start];
-        } else {
-            int mid = (start + end) / 2;
-            build(2 * node + 1, start, mid);
-            build(2 * node + 2, mid + 1, end);
-            tree[node] = tree[2 * node + 1] + tree[2 * node + 2];
+    public Node merge(Node l, Node r, int leftlen, int rightlen){
+        Node result = new Node();
+        result.leftchar = l.leftchar;
+        result.rightchar = r.rightchar;
+
+        // update prefix
+        result.prefix = l.prefix;
+        // handling the case where prefix could have been extended while merging due to same characters
+        if (l.prefix == leftlen && l.rightchar == r.leftchar) {
+            result.prefix = l.prefix + r.prefix;
         }
-    }
 
-    public int query(int left, int right) {
-        return queryUtil(0, 0, n - 1, left, right);
-    }
-
-    private int queryUtil(int node, int start, int end, int left, int right) {
-        if (right < start || left > end) return 0; // Out of range
-        if (left <= start && end <= right) return tree[node]; // Fully in range
-        int mid = (start + end) / 2;
-        return queryUtil(2 * node + 1, start, mid, left, right) +
-               queryUtil(2 * node + 2, mid + 1, end, left, right);
-    }
-
-    public void update(int idx, int newValue) {
-        updateUtil(0, 0, n - 1, idx, newValue);
-    }
-
-    private void updateUtil(int node, int start, int end, int idx, int newValue) {
-        if (start == end) {
-            arr[idx] = newValue;
-            tree[node] = newValue;
-        } else {
-            int mid = (start + end) / 2;
-            if (idx <= mid) updateUtil(2 * node + 1, start, mid, idx, newValue);
-            else updateUtil(2 * node + 2, mid + 1, end, idx, newValue);
-            tree[node] = tree[2 * node + 1] + tree[2 * node + 2];
+        // update suffix
+        result.suffix = r.suffix;
+        if (r.suffix == rightlen && l.rightchar == r.leftchar) {
+            result.suffix = r.suffix + l.suffix;
         }
+
+        // update maxlen
+        result.maxlen = Math.max(l.maxlen, r.maxlen);
+        // also check the middle part for maxlen as well
+        if (l.rightchar == r.leftchar) {
+            result.maxlen = Math.max(result.maxlen, l.suffix + r.prefix);
+        }
+
+        return result;
+    }
+
+    public void update(int i, int l, int r, int pos, char c){
+        if (l == r) {
+            segtree[i].maxlen = 1;
+            segtree[i].prefix = 1;
+            segtree[i].suffix = 1;
+            segtree[i].leftchar = c;
+            segtree[i].rightchar = c;
+            return ;
+        }
+
+        int mid = (l + r)/2;
+        if (pos <= mid) {
+            update(2*1 + 1, l, mid, pos, c);
+        }else{
+            update(2*1 + 2, mid + 1, r, pos, c);
+        }
+        
+        segtree[i] = merge(segtree[2*1 + 1], segtree[2*i + 2], mid - l + 1, r - mid);
+        return ;
     }
 }
